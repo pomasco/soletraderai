@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Store, PlusCircle, User } from 'lucide-react';
+import { Store, PlusCircle, User, LogIn } from 'lucide-react';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -58,7 +58,14 @@ export function Navigation() {
               ))}
             </div>
           </div>
-          <div className="flex items-center space-x-2" />
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/auth" className="flex items-center space-x-2">
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>
