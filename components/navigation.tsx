@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Store, PlusCircle, User, LogIn } from 'lucide-react';
+import { Store, PlusCircle, User, LogIn, Facebook } from 'lucide-react';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -26,8 +26,14 @@ export function Navigation() {
       href: '/profile',
       label: 'Profile',
       icon: User,
-      active: pathname === '/profile',
+      active: pathname === '/profile'
     },
+    {
+      href: '/test',
+      label: 'Test',
+      icon: Facebook,
+      active: pathname === '/test',
+    }
   ];
 
   return (
