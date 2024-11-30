@@ -1,18 +1,31 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Facebook, Loader2 } from 'lucide-react';
+import { Facebook, Loader2, Eye, EyeOff } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { authService } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const Icons = {
   spinner: Loader2,
   facebook: Facebook,
+  eye: Eye,
+  eyeOff: EyeOff,
   google: (props: React.ComponentProps<'svg'>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
       <path
@@ -36,10 +49,12 @@ const Icons = {
 };
 
 const formSchema = z.object({
-  name: z.string().min(2).max(50).optional(),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(50).optional().or(z.literal('')),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 interface AuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   mode: 'login' | 'register';
@@ -47,28 +62,52 @@ interface AuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      name: undefined,
       email: '',
       password: '',
     },
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit'
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
+async function onSubmit(values: FormData) {
+  setIsLoading(true);
     
-    try {
-      // TODO: Implement authentication logic
-      console.log(values);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+  try {
+    const result = mode === 'register'
+      ? await authService.signUp(values.email, values.password, values.name)
+      : await authService.signIn(values.email, values.password);
+
+    if (mode === 'register') {
+      if (result.success) {
+        toast.success('Registration successful! Please check your email to verify your account.');
+      } else {
+        throw new Error(result.error);
+      }
+    } else {
+      if (result.success) {
+        toast.success('Successfully signed in!');
+        router.push('/profile');
+        router.refresh();
+      } else {
+        throw new Error(result.error);
+      }
     }
+  } catch (error: unknown) {
+    console.error('Auth error:', error); // New log
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    toast.error(message);
+    form.setError('root', { message });
+  } finally {
+    setIsLoading(false);
   }
+}
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
@@ -90,46 +129,92 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
           </span>
         </div>
       </div>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form 
+  onSubmit={form.handleSubmit(onSubmit)}
+  className="space-y-4"
+>
         <div className="grid gap-4">
           {mode === 'register' && (
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your name"
-                type="text"
-                autoCapitalize="none"
-                autoCorrect="off"
-                disabled={isLoading}
-                {...form.register('name')}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="name"
+              shouldUnregister={true}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter your name"
+                      type="text"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder="Enter your email"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
-              {...form.register('email')}
+          <FormField
+            control={form.control}
+            name="email"
+            shouldUnregister={true}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter your email"
+                    type="email"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    autoCorrect="off"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              placeholder="Enter your password"
-              type="password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              disabled={isLoading}
-              {...form.register('password')}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="password"
+            shouldUnregister={true}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      placeholder="Enter your password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      disabled={isLoading}
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <Icons.eyeOff className="h-4 w-4" />
+                      ) : (
+                        <Icons.eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {mode === 'login' && (
             <div className="text-sm text-right">
               <Button variant="link" className="p-0 h-auto font-normal">
@@ -137,14 +222,15 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
               </Button>
             </div>
           )}
-          <Button disabled={isLoading} className="w-full">
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
             {mode === 'login' ? 'Sign In' : 'Sign Up'}
           </Button>
         </div>
-      </form>
+        </form>
+      </Form>
     </div>
   );
 }
