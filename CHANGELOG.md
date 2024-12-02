@@ -5,6 +5,38 @@ All notable changes to Sole Trader AI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2024-03-26
+
+### Added
+- Public folder structure for assets organization
+  - Logo variations (black/white)
+  - Background images for hero section
+  - Placeholder images for avatars and icons
+- New homepage design with modern UI
+  - Dynamic hero section with parallax effect
+  - Animated text transitions on scroll
+  - Features section with interactive cards
+- Navigation enhancements
+  - Transparent to solid background transition
+  - Dynamic logo switching based on scroll position
+  - Responsive design improvements
+
+### Changed
+- Complete redesign of landing page
+  - New hero section with dynamic background
+  - Improved typography and spacing
+  - Enhanced visual hierarchy
+- Navigation behavior and styling
+  - Added scroll-based transitions
+  - Updated color schemes for better contrast
+  - Improved mobile responsiveness
+
+### Fixed
+- React Server Components architecture
+  - Proper separation of client and server components
+  - Resolved hydration issues
+  - Improved component organization
+
 ## [0.2.0] - 2024-03-25
 
 ### Added
